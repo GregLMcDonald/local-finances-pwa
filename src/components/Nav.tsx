@@ -36,8 +36,8 @@ export function BottomNav() {
               <div className="flex items-center gap-2">
                 <span className="text-accent-green font-bold text-lg">⚡</span>
                 <div>
-                  <div className="font-bold text-white text-sm">NEXUS OS</div>
-                  <div className="text-muted text-xs">Personal AI Operating System</div>
+                  <div className="font-bold text-white text-sm">Hearth</div>
+                  <div className="text-muted text-xs">Your finances, at home.</div>
                 </div>
               </div>
               <button onClick={() => setMenuOpen(false)} className="text-muted hover:text-white text-lg leading-none">✕</button>

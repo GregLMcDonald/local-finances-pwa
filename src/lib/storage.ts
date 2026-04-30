@@ -1,13 +1,13 @@
 import type { AppData, AppSettings } from './types'
 
 const KEYS = {
-  accounts: 'nexus_accounts',
-  transactions: 'nexus_transactions',
-  budgets: 'nexus_budgets',
-  debts: 'nexus_debts',
-  subscriptions: 'nexus_subscriptions',
-  tasks: 'nexus_tasks',
-  settings: 'nexus_settings',
+  accounts: 'hearth_accounts',
+  transactions: 'hearth_transactions',
+  budgets: 'hearth_budgets',
+  debts: 'hearth_debts',
+  subscriptions: 'hearth_subscriptions',
+  tasks: 'hearth_tasks',
+  settings: 'hearth_settings',
 } as const
 
 function read<T>(key: string, fallback: T): T {

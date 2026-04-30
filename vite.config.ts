@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
-        name: 'NEXUS OS',
-        short_name: 'NEXUS',
-        description: 'Personal AI Operating System',
+        name: 'Hearth',
+        short_name: 'Hearth',
+        description: 'Your finances, at home.',
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',

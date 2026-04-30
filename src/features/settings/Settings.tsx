@@ -39,7 +39,7 @@ export function Settings() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `nexus-backup-${new Date().toISOString().split('T')[0]}.enc`
+      a.download = `hearth-backup-${new Date().toISOString().split('T')[0]}.enc`
       a.click()
       URL.revokeObjectURL(url)
       setStatus('Backup downloaded successfully.')
@@ -94,7 +94,7 @@ export function Settings() {
         <Card>
           <div className="font-medium text-white mb-1">Install as App</div>
           <p className="text-sm text-muted">
-            <strong className="text-white">Desktop (Chrome):</strong> Click the install icon (⊕) in the address bar to install NEXUS OS as a desktop app.
+            <strong className="text-white">Desktop (Chrome):</strong> Click the install icon (⊕) in the address bar to install Hearth as a desktop app.
           </p>
           <p className="text-sm text-muted mt-2">
             <strong className="text-white">iPhone:</strong> Open this URL in Safari, tap the Share button, then "Add to Home Screen".
@@ -104,7 +104,7 @@ export function Settings() {
         <Card>
           <div className="font-medium text-white mb-1">About</div>
           <div className="text-sm text-muted space-y-1">
-            <p>NEXUS OS — Personal Finance Manager</p>
+            <p>Hearth — Personal Finance Manager</p>
             <p>All data stored locally on your device.</p>
             <p>No server. No account. No tracking.</p>
           </div>

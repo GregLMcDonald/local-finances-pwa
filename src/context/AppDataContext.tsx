@@ -111,7 +111,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   // keep storage in sync when another tab writes
   useEffect(() => {
     const handler = (e: StorageEvent) => {
-      if (e.key?.startsWith('nexus_')) {
+      if (e.key?.startsWith('hearth_')) {
         dispatch({ type: 'SET_ALL', payload: loadInitial() })
       }
     }
