@@ -89,13 +89,13 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173/local-finance/](http://localhost:5173/local-finance/)
+Open [http://localhost:5173/local-finances-pwa/](http://localhost:5173/local-finances-pwa/)
 
 ### Building for production
 
 ```bash
 npm run build
-npm run preview    # preview at localhost:4173/local-finance/
+npm run preview    # preview at localhost:4173/local-finances-pwa/
 ```
 
 ---
@@ -105,7 +105,7 @@ npm run preview    # preview at localhost:4173/local-finance/
 1. Push this repo to GitHub (public repo, or private with GitHub Pro)
 2. Go to **Settings → Pages → Source** and select **GitHub Actions**
 3. Push to `main` — the workflow in [.github/workflows/deploy.yml](.github/workflows/deploy.yml) handles the rest
-4. Your app lives at `https://yourusername.github.io/local-finance/`
+4. Your app lives at `https://yourusername.github.io/local-finances-pwa/`
 
 ---
 

@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
-  base: '/local-finance/',
+  base: '/local-finances-pwa/',
   plugins: [
     react(),
     VitePWA({
@@ -18,8 +18,8 @@ export default defineConfig({
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/local-finance/',
-        scope: '/local-finance/',
+        start_url: '/local-finances-pwa/',
+        scope: '/local-finances-pwa/',
         icons: [
           {
             src: 'icons/icon-192.png',
