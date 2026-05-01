@@ -52,7 +52,7 @@ export function parseOFX(text: string, accountId: string): Transaction[] {
     const trntype = tag(block, 'TRNTYPE').toLowerCase()
     const dtposted = tag(block, 'DTPOSTED')
     const trnamt = parseFloat(tag(block, 'TRNAMT'))
-    const memo = tag(block, 'MEMO') || tag(block, 'NAME')
+    const description = tag(block, 'NAME') || tag(block, 'MEMO')
 
     if (!dtposted || isNaN(trnamt)) continue
 
@@ -67,7 +67,7 @@ export function parseOFX(text: string, accountId: string): Transaction[] {
       id: randomId(),
       accountId,
       date,
-      description: memo,
+      description: description,
       amount: Math.abs(trnamt),
       type: isExpense ? 'expense' : 'income',
       category: 'Uncategorized',
