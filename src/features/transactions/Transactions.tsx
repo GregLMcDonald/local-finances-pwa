@@ -11,12 +11,9 @@ import type { Transaction, TransactionType } from '@/lib/types'
 
 type Filter = 'all' | 'income' | 'expense'
 
-const CATEGORIES = [
-  'Uncategorized', 'Food & Dining', 'Transport', 'Housing', 'Utilities',
-  'Entertainment', 'Health', 'Shopping', 'Travel', 'Income', 'Other',
-].map((c) => ({ value: c, label: c }))
+const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Dividend', 'Reimbursement', 'Other Income']
 
-function blank(accounts: { id: string; name: string }[]): Omit<Transaction, 'id'> {
+function blank(accounts: { id: string }[]): Omit<Transaction, 'id'> {
   return {
     accountId: accounts[0]?.id ?? '',
     date: today(),
@@ -37,13 +34,25 @@ export function Transactions() {
 
   const accountOptions = data.accounts.map((a) => ({ value: a.id, label: a.name }))
 
+  const expenseCategories = useMemo(() => {
+    const fromBudgets = data.budgets.map((b) => b.category)
+    const unique = Array.from(new Set(fromBudgets)).sort()
+    return ['Uncategorized', ...unique]
+  }, [data.budgets])
+
+  const categoryOptions = useMemo(() => {
+    const cats = form.type === 'income' ? INCOME_CATEGORIES : expenseCategories
+    return cats.map((c) => ({ value: c, label: c }))
+  }, [form.type, expenseCategories])
+
   const visible = useMemo(() => {
     const base = filter === 'all' ? data.transactions : data.transactions.filter((t) => t.type === filter)
     return [...base].sort((a, b) => b.date.localeCompare(a.date))
   }, [data.transactions, filter])
 
   const openAdd = () => {
-    setForm(blank(data.accounts))
+    const f = blank(data.accounts)
+    setForm(f)
     setEditing(null)
     setModal(true)
   }
@@ -58,10 +67,11 @@ export function Transactions() {
 
   const save = () => {
     if (!form.description.trim()) return
+    const accountId = form.accountId || data.accounts[0]?.id || ''
     if (editing) {
-      setTransactions(data.transactions.map((t) => t.id === editing.id ? { ...form, id: editing.id } : t))
+      setTransactions(data.transactions.map((t) => t.id === editing.id ? { ...form, accountId, id: editing.id } : t))
     } else {
-      setTransactions([...data.transactions, { ...form, id: crypto.randomUUID() }])
+      setTransactions([...data.transactions, { ...form, accountId, id: crypto.randomUUID() }])
     }
     close()
   }
@@ -69,6 +79,11 @@ export function Transactions() {
   const remove = (id: string) => setTransactions(data.transactions.filter((t) => t.id !== id))
 
   const accountName = (id: string) => data.accounts.find((a) => a.id === id)?.name ?? '—'
+
+  const handleTypeChange = (type: TransactionType) => {
+    const defaultCat = type === 'income' ? INCOME_CATEGORIES[0] : expenseCategories[0]
+    setForm({ ...form, type, category: defaultCat })
+  }
 
   return (
     <Layout
@@ -126,11 +141,26 @@ export function Transactions() {
           <div className="space-y-3">
             <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="e.g. Grocery store" />
             <Input label="Amount" type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} />
-            <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as TransactionType })} options={[{ value: 'expense', label: 'Expense' }, { value: 'income', label: 'Income' }]} />
+            <Select
+              label="Type"
+              value={form.type}
+              onChange={(e) => handleTypeChange(e.target.value as TransactionType)}
+              options={[{ value: 'expense', label: 'Expense' }, { value: 'income', label: 'Income' }]}
+            />
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-            <Select label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} options={CATEGORIES} />
+            <Select
+              label="Category"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              options={categoryOptions}
+            />
             {accountOptions.length > 0 && (
-              <Select label="Account" value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })} options={accountOptions} />
+              <Select
+                label="Account"
+                value={form.accountId || accountOptions[0]?.value}
+                onChange={(e) => setForm({ ...form, accountId: e.target.value })}
+                options={accountOptions}
+              />
             )}
             <Input label="Notes (optional)" value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>

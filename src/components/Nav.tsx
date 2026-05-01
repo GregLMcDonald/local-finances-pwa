@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: HomeIcon },
-  { to: '/finance', label: 'Finance', icon: FinanceIcon },
+  { to: '/finance', label: 'Transactions', icon: FinanceIcon },
   { to: '/budget', label: 'Budget', icon: BudgetIcon },
   { to: '/tasks', label: 'Tasks', icon: TasksIcon },
 ]

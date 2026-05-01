@@ -11,8 +11,15 @@ import type { Budget } from '@/lib/types'
 
 const COLORS = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#eab308', '#ef4444', '#06b6d4']
 
+type ViewPeriod = 'month' | 'year'
+
 function blank(): Omit<Budget, 'id'> {
   return { category: '', limit: 0, period: 'monthly', color: COLORS[0] }
+}
+
+function currentYearRange(): { start: string; end: string } {
+  const year = new Date().getFullYear()
+  return { start: `${year}-01-01`, end: `${year}-12-31` }
 }
 
 export function BudgetPage() {
@@ -20,18 +27,24 @@ export function BudgetPage() {
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Budget | null>(null)
   const [form, setForm] = useState(blank())
+  const [viewPeriod, setViewPeriod] = useState<ViewPeriod>('month')
 
-  const { start, end } = currentMonthRange()
+  const monthRange = currentMonthRange()
+  const yearRange = currentYearRange()
+  const range = viewPeriod === 'month' ? monthRange : yearRange
 
   const spentByCategory = useMemo(() => {
     const map: Record<string, number> = {}
     data.transactions
-      .filter((t) => t.date >= start && t.date <= end && t.type === 'expense')
+      .filter((t) => t.date >= range.start && t.date <= range.end && t.type === 'expense')
       .forEach((t) => { map[t.category] = (map[t.category] ?? 0) + t.amount })
     return map
-  }, [data.transactions, start, end])
+  }, [data.transactions, range.start, range.end])
 
-  const totalBudget = data.budgets.reduce((s, b) => s + (b.period === 'monthly' ? b.limit : b.limit / 12), 0)
+  const totalLimit = data.budgets.reduce((s, b) => {
+    const monthly = b.period === 'monthly' ? b.limit : b.limit / 12
+    return s + (viewPeriod === 'month' ? monthly : monthly * 12)
+  }, 0)
   const totalSpent = data.budgets.reduce((s, b) => s + (spentByCategory[b.category] ?? 0), 0)
 
   const openAdd = () => { setForm(blank()); setEditing(null); setModal(true) }
@@ -49,38 +62,66 @@ export function BudgetPage() {
 
   const remove = (id: string) => setBudgets(data.budgets.filter((b) => b.id !== id))
 
+  const periodLabel = viewPeriod === 'month'
+    ? new Date().toLocaleString('default', { month: 'long' })
+    : String(new Date().getFullYear())
+
   return (
     <Layout
       title="Budget"
-      subtitle="Track spending against your budget"
-      action={<Button onClick={openAdd} size="sm">+ Add Budget</Button>}
+      subtitle="Set limits for spending categories"
+      action={<Button onClick={openAdd} size="sm">+ Add Category</Button>}
     >
       <div className="space-y-3">
+        <div className="flex gap-2">
+          {(['month', 'year'] as ViewPeriod[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setViewPeriod(p)}
+              className={`px-3 py-1.5 rounded-lg text-sm border transition-colors capitalize ${
+                viewPeriod === p ? 'border-white text-white' : 'border-border text-muted hover:text-white'
+              }`}
+            >
+              {p === 'month' ? new Date().toLocaleString('default', { month: 'long' }) : String(new Date().getFullYear())}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 gap-3">
-          <Card><div className="text-sm text-muted">Total Budget</div><div className="text-2xl font-bold text-white mt-1">{fmt(totalBudget)}</div></Card>
-          <Card><div className="text-sm text-muted">Total Spent</div><div className={`text-2xl font-bold mt-1 ${totalSpent > totalBudget && totalBudget > 0 ? 'text-accent-red' : 'text-accent-orange'}`}>{fmt(totalSpent)}</div></Card>
-          <Card><div className="text-sm text-muted">Remaining</div><div className={`text-2xl font-bold mt-1 ${totalBudget - totalSpent >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{fmt(totalBudget - totalSpent)}</div></Card>
+          <Card>
+            <div className="text-sm text-muted">Total Limit ({periodLabel})</div>
+            <div className="text-2xl font-bold text-white mt-1">{fmt(totalLimit)}</div>
+          </Card>
+          <Card>
+            <div className="text-sm text-muted">Total Spent ({periodLabel})</div>
+            <div className={`text-2xl font-bold mt-1 ${totalSpent > totalLimit && totalLimit > 0 ? 'text-accent-red' : 'text-accent-orange'}`}>{fmt(totalSpent)}</div>
+          </Card>
+          <Card>
+            <div className="text-sm text-muted">Remaining</div>
+            <div className={`text-2xl font-bold mt-1 ${totalLimit - totalSpent >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{fmt(totalLimit - totalSpent)}</div>
+          </Card>
         </div>
 
         {data.budgets.length === 0
-          ? <EmptyState message="No budgets set. Add your first budget above." />
+          ? <EmptyState message="No categories yet. Add your first budget category above." />
           : data.budgets.map((b) => {
             const monthly = b.period === 'monthly' ? b.limit : b.limit / 12
+            const periodLimit = viewPeriod === 'month' ? monthly : monthly * 12
             const spent = spentByCategory[b.category] ?? 0
-            const pct = monthly > 0 ? Math.min((spent / monthly) * 100, 100) : 0
-            const over = spent > monthly
+            const pct = periodLimit > 0 ? Math.min((spent / periodLimit) * 100, 100) : 0
+            const over = spent > periodLimit
 
             return (
               <Card key={b.id} onClick={() => openEdit(b)}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <div className="font-medium text-white">{b.category}</div>
-                    <div className="text-xs text-muted capitalize">{b.period}</div>
+                    <div className="text-xs text-muted capitalize">{b.period} limit</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
                       <div className={`font-semibold ${over ? 'text-accent-red' : 'text-white'}`}>{fmt(spent)}</div>
-                      <div className="text-xs text-muted">of {fmt(monthly)}</div>
+                      <div className="text-xs text-muted">of {fmt(periodLimit)}</div>
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); remove(b.id) }} className="text-muted hover:text-accent-red text-sm">✕</button>
                   </div>
@@ -99,7 +140,7 @@ export function BudgetPage() {
 
       {modal && (
         <Modal
-          title={editing ? 'Edit Budget' : 'Add Budget'}
+          title={editing ? 'Edit Category' : 'Add Category'}
           onClose={() => setModal(false)}
           footer={
             <>
@@ -109,7 +150,7 @@ export function BudgetPage() {
           }
         >
           <div className="space-y-3">
-            <Input label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Food & Dining" />
+            <Input label="Name" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Food & Dining" />
             <Input label="Limit" type="number" step="0.01" value={form.limit} onChange={(e) => setForm({ ...form, limit: parseFloat(e.target.value) || 0 })} />
             <Select label="Period" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value as Budget['period'] })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
             <div className="flex flex-col gap-1">
