@@ -7,6 +7,7 @@ export interface Account {
   balance: number
   currency: string
   createdAt: string
+  reconciliationId?: string
 }
 
 export type TransactionType = 'income' | 'expense'

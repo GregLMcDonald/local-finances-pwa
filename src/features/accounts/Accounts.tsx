@@ -28,7 +28,7 @@ const TYPE_COLORS: Record<AccountType, string> = {
 }
 
 function blank(): Omit<Account, 'id' | 'createdAt'> {
-  return { name: '', type: 'checking', balance: 0, currency: 'USD' }
+  return { name: '', type: 'checking', balance: 0, currency: 'USD', reconciliationId: '' }
 }
 
 export function Accounts() {
@@ -38,7 +38,7 @@ export function Accounts() {
   const [form, setForm] = useState(blank())
 
   const openAdd = () => { setForm(blank()); setEditing(null); setModal('add') }
-  const openEdit = (a: Account) => { setForm({ name: a.name, type: a.type, balance: a.balance, currency: a.currency }); setEditing(a); setModal('edit') }
+  const openEdit = (a: Account) => { setForm({ name: a.name, type: a.type, balance: a.balance, currency: a.currency, reconciliationId: a.reconciliationId ?? '' }); setEditing(a); setModal('edit') }
   const close = () => setModal(null)
 
   const save = () => {
@@ -113,9 +113,16 @@ export function Accounts() {
           }
         >
           <div className="space-y-3">
-            <Input label="Account Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Chase Checking" />
+            <Input label="Account Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Desjardins Chequing" />
             <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as AccountType })} options={ACCOUNT_TYPES} />
             <Input label="Balance" type="number" step="0.01" value={form.balance} onChange={(e) => setForm({ ...form, balance: parseFloat(e.target.value) || 0 })} />
+            <Input
+              label="Reconciliation ID (optional)"
+              value={form.reconciliationId ?? ''}
+              onChange={(e) => setForm({ ...form, reconciliationId: e.target.value })}
+              placeholder="e.g. 815-10101-0773335-PCA"
+            />
+            <p className="text-xs text-muted -mt-1">Paste the ACCTID from your bank's OFX/QFX file. Used to auto-match accounts on import.</p>
           </div>
         </Modal>
       )}

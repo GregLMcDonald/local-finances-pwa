@@ -4,7 +4,7 @@ import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Select } from '@/components/Input'
 import { useAppData } from '@/context/AppDataContext'
-import { parseCSV, parseOFX } from '@/lib/parsers'
+import { parseCSV, parseOFX, detectOFXAccountId } from '@/lib/parsers'
 import { fmt, fmtDate } from '@/lib/format'
 import type { Transaction } from '@/lib/types'
 
@@ -15,6 +15,7 @@ export function Import() {
   const [step, setStep] = useState<Step>('upload')
   const [parsed, setParsed] = useState<Transaction[]>([])
   const [accountId, setAccountId] = useState(data.accounts[0]?.id ?? '')
+  const [detectedAccountName, setDetectedAccountName] = useState<string | null>(null)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -22,17 +23,30 @@ export function Import() {
 
   const handleFile = async (file: File) => {
     setError('')
+    setDetectedAccountName(null)
     const text = await file.text()
     const ext = file.name.split('.').pop()?.toLowerCase()
     let txns: Transaction[] = []
+    let resolvedAccountId = accountId
+
     if (ext === 'csv') {
-      txns = parseCSV(text, accountId)
+      txns = parseCSV(text, resolvedAccountId)
     } else if (ext === 'ofx' || ext === 'qfx') {
-      txns = parseOFX(text, accountId)
+      const ofxId = detectOFXAccountId(text)
+      if (ofxId) {
+        const matched = data.accounts.find((a) => a.reconciliationId === ofxId)
+        if (matched) {
+          resolvedAccountId = matched.id
+          setAccountId(matched.id)
+          setDetectedAccountName(matched.name)
+        }
+      }
+      txns = parseOFX(text, resolvedAccountId)
     } else {
       setError('Unsupported file type. Please upload a CSV or OFX/QFX file.')
       return
     }
+
     if (txns.length === 0) {
       setError('No transactions found in file.')
       return
@@ -53,7 +67,12 @@ export function Import() {
     setStep('done')
   }
 
-  const reset = () => { setStep('upload'); setParsed([]); setError('') }
+  const reset = () => {
+    setStep('upload')
+    setParsed([])
+    setError('')
+    setDetectedAccountName(null)
+  }
 
   return (
     <Layout title="Import" subtitle="Import transactions from CSV or OFX files">
@@ -93,7 +112,7 @@ export function Import() {
               </svg>
               <div className="text-center">
                 <div className="text-white font-medium">Click to upload CSV or OFX file</div>
-                <div className="text-muted text-sm mt-1">Supports CSV and OFX (bank statement) files</div>
+                <div className="text-muted text-sm mt-1">Supports CSV and OFX/QFX (bank statement) files</div>
               </div>
             </Card>
 
@@ -107,6 +126,14 @@ export function Import() {
               <p className="text-sm text-muted">{parsed.length} transaction{parsed.length !== 1 ? 's' : ''} found</p>
               <Button variant="ghost" size="sm" onClick={reset}>← Back</Button>
             </div>
+
+            {detectedAccountName && (
+              <div className="text-sm text-accent-green bg-green-950/30 border border-green-800 rounded-xl px-3 py-2 flex items-center gap-2">
+                <span>✓</span>
+                <span>Auto-matched to <strong>{detectedAccountName}</strong> via Reconciliation ID</span>
+              </div>
+            )}
+
             <div className="space-y-2 max-h-[50vh] overflow-y-auto">
               {parsed.map((t) => (
                 <Card key={t.id}>

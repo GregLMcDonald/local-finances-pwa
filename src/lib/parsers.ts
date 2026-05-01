@@ -37,24 +37,29 @@ export function parseCSV(text: string, accountId: string): Transaction[] {
   })
 }
 
+function ofxTag(text: string, name: string): string {
+  const m = text.match(new RegExp(`<${name}>([^<\n\r]+)`, 'i'))
+  return m ? m[1].trim() : ''
+}
+
+export function detectOFXAccountId(text: string): string | null {
+  const id = ofxTag(text, 'ACCTID')
+  return id || null
+}
+
 export function parseOFX(text: string, accountId: string): Transaction[] {
   const transactions: Transaction[] = []
   const stmtTrnRegex = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi
   let match: RegExpExecArray | null
 
-  const tag = (block: string, name: string) => {
-    const m = block.match(new RegExp(`<${name}>([^<\n\r]+)`, 'i'))
-    return m ? m[1].trim() : ''
-  }
-
   while ((match = stmtTrnRegex.exec(text)) !== null) {
     const block = match[1]
-    const trntype = tag(block, 'TRNTYPE').toLowerCase()
-    const dtposted = tag(block, 'DTPOSTED')
-    const trnamt = parseFloat(tag(block, 'TRNAMT'))
-    const description = tag(block, 'NAME') || tag(block, 'MEMO')
+    const trntype = ofxTag(block, 'TRNTYPE').toLowerCase()
+    const dtposted = ofxTag(block, 'DTPOSTED')
+    const trnamt = parseFloat(ofxTag(block, 'TRNAMT'))
+    const description = ofxTag(block, 'NAME')
 
-    if (!dtposted || isNaN(trnamt)) continue
+    if (!dtposted || isNaN(trnamt) || !description) continue
 
     const year = dtposted.slice(0, 4)
     const month = dtposted.slice(4, 6)
@@ -67,7 +72,7 @@ export function parseOFX(text: string, accountId: string): Transaction[] {
       id: randomId(),
       accountId,
       date,
-      description: description,
+      description,
       amount: Math.abs(trnamt),
       type: isExpense ? 'expense' : 'income',
       category: 'Uncategorized',
