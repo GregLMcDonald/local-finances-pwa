@@ -72,8 +72,10 @@ export function BudgetPage() {
     return viewPeriod === 'month' ? monthly : monthly * 12
   }
 
-  const expenseBudgets = data.budgets.filter((b) => b.type === 'expense')
-  const incomeBudgets = data.budgets.filter((b) => b.type === 'income')
+  const btype = (b: Budget) => b.type ?? 'expense'
+
+  const expenseBudgets = data.budgets.filter((b) => btype(b) === 'expense')
+  const incomeBudgets = data.budgets.filter((b) => btype(b) === 'income')
 
   const totalExpenseLimit = expenseBudgets.reduce((s, b) => s + periodLimit(b), 0)
   const totalExpenseSpent = expenseBudgets.reduce((s, b) => s + (amountByCategory[`expense:${b.category}`] ?? 0), 0)
@@ -101,7 +103,7 @@ export function BudgetPage() {
 
   const BudgetCard = ({ b }: { b: Budget }) => {
     const limit = periodLimit(b)
-    const actual = amountByCategory[`${b.type}:${b.category}`] ?? 0
+    const actual = amountByCategory[`${btype(b)}:${b.category}`] ?? 0
     const pct = limit > 0 ? Math.min((actual / limit) * 100, 100) : 0
     const isOver = actual > limit && limit > 0
     const isIncome = b.type === 'income'
