@@ -14,7 +14,7 @@ const COLORS = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#eab308', '#ef4444'
 type ViewPeriod = 'month' | 'year'
 
 function blank(): Omit<Budget, 'id'> {
-  return { category: '', limit: 0, period: 'monthly', color: COLORS[0] }
+  return { category: '', type: 'expense', limit: 0, period: 'monthly', color: COLORS[0] }
 }
 
 function currentYearRange(): { start: string; end: string } {
@@ -33,11 +33,11 @@ export function BudgetPage() {
   const yearRange = currentYearRange()
   const range = viewPeriod === 'month' ? monthRange : yearRange
 
-  const spentByCategory = useMemo(() => {
+  const amountByCategory = useMemo(() => {
     const map: Record<string, number> = {}
     data.transactions
-      .filter((t) => t.date >= range.start && t.date <= range.end && t.type === 'expense')
-      .forEach((t) => { map[t.category] = (map[t.category] ?? 0) + t.amount })
+      .filter((t) => t.date >= range.start && t.date <= range.end)
+      .forEach((t) => { map[`${t.type}:${t.category}`] = (map[`${t.type}:${t.category}`] ?? 0) + t.amount })
     return map
   }, [data.transactions, range.start, range.end])
 
@@ -45,10 +45,10 @@ export function BudgetPage() {
     const monthly = b.period === 'monthly' ? b.limit : b.limit / 12
     return s + (viewPeriod === 'month' ? monthly : monthly * 12)
   }, 0)
-  const totalSpent = data.budgets.reduce((s, b) => s + (spentByCategory[b.category] ?? 0), 0)
+  const totalSpent = data.budgets.reduce((s, b) => s + (amountByCategory[`${b.type}:${b.category}`] ?? 0), 0)
 
   const openAdd = () => { setForm(blank()); setEditing(null); setModal(true) }
-  const openEdit = (b: Budget) => { setForm({ category: b.category, limit: b.limit, period: b.period, color: b.color }); setEditing(b); setModal(true) }
+  const openEdit = (b: Budget) => { setForm({ category: b.category, type: b.type ?? 'expense', limit: b.limit, period: b.period, color: b.color }); setEditing(b); setModal(true) }
 
   const save = () => {
     if (!form.category.trim()) return
@@ -107,7 +107,7 @@ export function BudgetPage() {
           : data.budgets.map((b) => {
             const monthly = b.period === 'monthly' ? b.limit : b.limit / 12
             const periodLimit = viewPeriod === 'month' ? monthly : monthly * 12
-            const spent = spentByCategory[b.category] ?? 0
+            const spent = amountByCategory[`${b.type}:${b.category}`] ?? 0
             const pct = periodLimit > 0 ? Math.min((spent / periodLimit) * 100, 100) : 0
             const over = spent > periodLimit
 
@@ -151,6 +151,7 @@ export function BudgetPage() {
         >
           <div className="space-y-3">
             <Input label="Name" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Food & Dining" />
+            <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Budget['type'] })} options={[{ value: 'expense', label: 'Expense' }, { value: 'income', label: 'Income' }]} />
             <Input label="Limit" type="number" step="0.01" value={form.limit} onChange={(e) => setForm({ ...form, limit: parseFloat(e.target.value) || 0 })} />
             <Select label="Period" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value as Budget['period'] })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
             <div className="flex flex-col gap-1">

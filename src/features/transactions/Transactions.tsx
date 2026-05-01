@@ -11,8 +11,6 @@ import type { Transaction, TransactionType } from '@/lib/types'
 
 type Filter = 'all' | 'income' | 'expense'
 
-const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Dividend', 'Reimbursement', 'Other Income']
-
 function blank(accounts: { id: string }[]): Omit<Transaction, 'id'> {
   return {
     accountId: accounts[0]?.id ?? '',
@@ -35,15 +33,20 @@ export function Transactions() {
   const accountOptions = data.accounts.map((a) => ({ value: a.id, label: a.name }))
 
   const expenseCategories = useMemo(() => {
-    const fromBudgets = data.budgets.map((b) => b.category)
+    const fromBudgets = data.budgets.filter((b) => b.type === 'expense').map((b) => b.category)
+    return ['Uncategorized', ...Array.from(new Set(fromBudgets)).sort()]
+  }, [data.budgets])
+
+  const incomeCategories = useMemo(() => {
+    const fromBudgets = data.budgets.filter((b) => b.type === 'income').map((b) => b.category)
     const unique = Array.from(new Set(fromBudgets)).sort()
-    return ['Uncategorized', ...unique]
+    return unique.length > 0 ? unique : ['Salary', 'Freelance', 'Dividend', 'Reimbursement', 'Other Income']
   }, [data.budgets])
 
   const categoryOptions = useMemo(() => {
-    const cats = form.type === 'income' ? INCOME_CATEGORIES : expenseCategories
-    return cats.map((c) => ({ value: c, label: c }))
-  }, [form.type, expenseCategories])
+    const cats = form.type === 'income' ? incomeCategories : expenseCategories
+    return cats.map((c: string) => ({ value: c, label: c }))
+  }, [form.type, expenseCategories, incomeCategories])
 
   const visible = useMemo(() => {
     const base = filter === 'all' ? data.transactions : data.transactions.filter((t) => t.type === filter)
@@ -81,7 +84,7 @@ export function Transactions() {
   const accountName = (id: string) => data.accounts.find((a) => a.id === id)?.name ?? '—'
 
   const handleTypeChange = (type: TransactionType) => {
-    const defaultCat = type === 'income' ? INCOME_CATEGORIES[0] : expenseCategories[0]
+    const defaultCat = type === 'income' ? incomeCategories[0] : expenseCategories[0]
     setForm({ ...form, type, category: defaultCat })
   }
 

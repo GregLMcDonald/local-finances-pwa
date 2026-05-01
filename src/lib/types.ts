@@ -26,6 +26,7 @@ export interface Transaction {
 export interface Budget {
   id: string
   category: string
+  type: 'income' | 'expense'
   limit: number
   period: 'monthly' | 'yearly'
   color?: string
