@@ -17,10 +17,12 @@ export function NetWorth() {
   const { data } = useAppData()
 
   const assets = data.accounts.filter((a) => a.type !== 'credit' && a.type !== 'loan')
-  const liabilities = data.accounts.filter((a) => a.type === 'credit' || a.type === 'loan')
+  const liabilityAccounts = data.accounts.filter((a) => a.type === 'credit' || a.type === 'loan')
 
   const totalAssets = assets.reduce((s, a) => s + a.balance, 0)
-  const totalLiabilities = liabilities.reduce((s, a) => s + a.balance, 0)
+  const totalAccountLiabilities = liabilityAccounts.reduce((s, a) => s + a.balance, 0)
+  const totalDebtLiabilities = data.debts.reduce((s, d) => s + d.balance, 0)
+  const totalLiabilities = totalAccountLiabilities + totalDebtLiabilities
   const netWorth = totalAssets - totalLiabilities
 
   return (
@@ -61,17 +63,26 @@ export function NetWorth() {
           </Card>
         )}
 
-        {liabilities.length > 0 && (
+        {(liabilityAccounts.length > 0 || data.debts.length > 0) && (
           <Card>
             <div className="font-medium text-white mb-3">Liabilities</div>
             <div className="space-y-2">
-              {liabilities.map((a) => (
+              {liabilityAccounts.map((a) => (
                 <div key={a.id} className="flex justify-between items-center text-sm">
                   <div>
                     <div className="text-white">{a.name}</div>
                     <div className="text-xs text-muted">{TYPE_LABEL[a.type]}</div>
                   </div>
                   <span className="text-accent-red font-medium">{fmt(a.balance)}</span>
+                </div>
+              ))}
+              {data.debts.map((d) => (
+                <div key={d.id} className="flex justify-between items-center text-sm">
+                  <div>
+                    <div className="text-white">{d.name}</div>
+                    <div className="text-xs text-muted capitalize">{d.type.replace('_', ' ')} · {d.interestRate}% APR</div>
+                  </div>
+                  <span className="text-accent-red font-medium">{fmt(d.balance)}</span>
                 </div>
               ))}
             </div>
